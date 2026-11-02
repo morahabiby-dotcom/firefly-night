@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Firefly Night Game</title>
+<style>
+:root{
+  --bg1:#fff6cf;--bg2:#cfeeff;--card:#ffffff;--ink:#1f2a44;--mute:#5a6785;
+  --glow:#f2a900;--good:#2e9e5b;--goodbg:#d9f6e4;--bad:#d6483b;--badbg:#ffe1dd;--btn:#fff3c4;--btnb:#f2c94c;--accent:#5b4bd6;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--bg1:#16204a;--bg2:#0b1230;--card:#1f2c5c;--ink:#f6f3e4;--mute:#b4bedf;--glow:#ffd84d;--good:#6fe39b;--goodbg:#1c4a3a;--bad:#ff8f84;--badbg:#5a2a35;--btn:#2c3b78;--btnb:#ffd84d;--accent:#a99bff}
+}
+:root[data-theme="dark"]{--bg1:#16204a;--bg2:#0b1230;--card:#1f2c5c;--ink:#f6f3e4;--mute:#b4bedf;--glow:#ffd84d;--good:#6fe39b;--goodbg:#1c4a3a;--bad:#ff8f84;--badbg:#5a2a35;--btn:#2c3b78;--btnb:#ffd84d;--accent:#a99bff}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:linear-gradient(180deg,var(--bg1),var(--bg2)) fixed;background-color:var(--bg2);color:var(--ink);font-family:"Comic Sans MS","Chalkboard SE","Trebuchet MS",system-ui,sans-serif;font-size:19px;line-height:1.4;overflow-x:hidden}
+#sky{position:fixed;inset:0;pointer-events:none;z-index:0}
+#sky i{position:absolute;width:10px;height:10px;border-radius:50%;background:var(--glow);box-shadow:0 0 14px 6px var(--glow);opacity:.0;animation:fly 9s infinite ease-in-out}
+@keyframes fly{0%{opacity:0;transform:translate(0,0)}20%{opacity:.8}50%{transform:translate(40px,-60px);opacity:.3}80%{opacity:.8}100%{opacity:0;transform:translate(-30px,-120px)}}
+main{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:16px 14px 40px}
+h1{font-size:2rem;margin:.2em 0;text-align:center}
+h2{font-size:1.35rem;margin:.2em 0 .4em}
+.card{background:var(--card);border-radius:24px;padding:20px;box-shadow:0 6px 0 rgba(0,0,0,.12);margin-top:14px}
+.big{font-size:3.6rem;text-align:center;margin:0}
+.center{text-align:center}
+.mute{color:var(--mute)}
+button{font:inherit;color:var(--ink);cursor:pointer}
+button:focus-visible,input:focus-visible{outline:4px solid var(--accent);outline-offset:2px}
+.go{display:block;width:100%;margin-top:14px;padding:14px;border:0;border-radius:18px;background:var(--glow);color:#1f2a44;font-weight:700;font-size:1.3rem;box-shadow:0 5px 0 rgba(0,0,0,.2)}
+.go:active{transform:translateY(3px);box-shadow:0 2px 0 rgba(0,0,0,.2)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.opt{padding:16px 8px;border-radius:18px;border:3px solid var(--btnb);background:var(--btn);font-size:1.35rem;font-weight:700;min-height:64px}
+.opt.sel{background:var(--glow);color:#1f2a44}
+.opt.ok{background:var(--goodbg);border-color:var(--good)}
+.opt.no{background:var(--badbg);border-color:var(--bad);opacity:.6}
+.opt.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.sentence{font-size:1.5rem;text-align:center;margin:10px 0;font-weight:700}
+.jar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:6px 0}
+.jar b{width:18px;height:18px;border-radius:50%;background:rgba(128,128,160,.35);transition:.3s}
+.jar b.on{background:var(--glow);box-shadow:0 0 12px 4px var(--glow)}
+.msg{min-height:2.4em;text-align:center;font-weight:700;font-size:1.25rem;margin-top:12px}
+.msg.g{color:var(--good)}.msg.b{color:var(--bad)}
+input[type=text]{width:100%;padding:14px;font:inherit;font-size:1.3rem;border-radius:16px;border:3px solid var(--btnb);background:var(--card);color:var(--ink);margin-top:10px}
+.tools{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.sw{width:42px;height:42px;border-radius:50%;border:4px solid var(--card);box-shadow:0 0 0 2px var(--mute)}
+.sw.on{box-shadow:0 0 0 4px var(--accent)}
+canvas{width:100%;aspect-ratio:4/3;border-radius:18px;background:#0b1230;touch-action:none;display:block}
+.small{padding:8px 14px;border-radius:14px;border:3px solid var(--btnb);background:var(--btn);font-weight:700}
+.cert{border:6px dashed var(--glow);border-radius:24px;padding:16px;text-align:center}
+.cert img{width:100%;border-radius:14px;margin-top:8px}
+@media (prefers-reduced-motion:reduce){#sky i,.opt.shake{animation:none}}
+</style>
+</head>
+<body>
+<div id="sky"></div>
+<main id="app"></main>
+<script>
+(function(){
+var Q=[
+ {lv:"Level 1: Adjective Hunt",p:"Tap the ADJECTIVE (describing word).",s:"little stars",o:["little","stars"],a:["little"],w:["little"],n:"stars"},
+ {lv:"Level 1: Adjective Hunt",p:"Tap the NOUN (the thing).",s:"dancing bug",o:["dancing","bug"],a:["bug"]},
+ {lv:"Level 1: Adjective Hunt",p:"Tap the ADJECTIVE.",s:"glowing light",o:["glowing","light"],a:["glowing"]},
+ {lv:"Level 1: Adjective Hunt",p:"Tap the NOUN.",s:"flitting beast",o:["flitting","beast"],a:["beast"]},
+ {lv:"Level 2: Make a Noun Phrase",p:"Pick a word to finish the sentence.",s:"I see a ___ firefly in the night!",o:["glowing","tiny","sparkling","shiny"],a:"any"},
+ {lv:"Level 2: Make a Noun Phrase",p:"Pick a word to finish the sentence.",s:"Look at the ___ stars!",o:["shiny","tiny","glowing","sparkling"],a:"any"},
+ {lv:"Level 3: Word Twins",p:"Tap the TWO words that mean the same as bug.",s:"",o:["insect","table","beast","pencil"],a:["insect","beast"]},
+ {lv:"Level 3: Word Twins",p:"Which word means the same as light?",s:"",o:["torch","door","hat","spoon"],a:["torch"]},
+ {lv:"Level 3: Word Twins",p:"Which word means flying quickly?",s:"",o:["flitting","sleeping","walking","sitting"],a:["flitting"]},
+ {lv:"Level 4: Sound Magic",p:"Which word rhymes with bug?",s:"",o:["hug","bed","star","moon"],a:["hug"]},
+ {lv:"Level 4: Sound Magic",p:"Fill the gap from the poem.",s:"Wave little stars about my bed! ___ little stars into my sleep!",o:["Weave","Walk","Wash","Wait"],a:["Weave"]},
+ {lv:"Level 4: Sound Magic",p:"Fill the gap from the poem.",s:"Come, little dancing white-fire ___!",o:["bug","bag","bed","big"],a:["bug"]}
+];
+var GOOD=["Brilliant! ✨","You got it! 🌟","Super! 🎉","Wow, well done! 🥳","Shining bright! 💛"];
+var BAD=["Nearly! Try again 💪","Have another go! 🌙","Look closely, you can do it! 👀"];
+var COL=["#ffd84d","#ff7aa8","#7be0ff","#8dff9a","#ffffff","#c7a2ff"];
+var app=document.getElementById("app"),name="",i=0,score=0,tries=0,sel=[],done=false,pic="",phrase="";
+var sky=document.getElementById("sky");
+for(var k=0;k<14;k++){var f=document.createElement("i");f.style.left=(Math.random()*95)+"%";f.style.top=(30+Math.random()*65)+"%";f.style.animationDelay=(Math.random()*9)+"s";f.style.animationDuration=(7+Math.random()*6)+"s";sky.appendChild(f)}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+function jar(){var h='<div class="jar" aria-label="Fireflies caught">';for(var k=0;k<Q.length;k++)h+='<b class="'+(k<score?"on":"")+'"></b>';return h+"</div>"}
+
+function start(){
+ i=0;score=0;
+ app.innerHTML='<h1>✨ Firefly Night ✨</h1><div class="card center"><p class="big">🌙</p><h2>Catch the fireflies!</h2><p>Answer the questions to light up the night sky.</p><p class="mute">What is your name?</p><input type="text" id="nm" maxlength="20" placeholder="Type your name here" autocomplete="off" value="'+'"><button class="go" id="play">Let’s play!</button></div>';
+ var inp=document.getElementById("nm");inp.value=name;
+ document.getElementById("play").onclick=function(){name=inp.value.trim();ask()};
+}
+
+function ask(){
+ if(i>=Q.length){draw();return}
+ var q=Q[i];tries=0;sel=[];done=false;
+ var multi=q.a!=="any"&&q.a.length>1;
+ var h='<h1>Firefly Night</h1>'+jar()+'<div class="card"><p class="mute center" style="margin:0">'+q.lv+'</p><h2 class="center">'+q.p+'</h2>';
+ if(q.s)h+='<div class="sentence">'+q.s.replace("___","<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>")+'</div>';
+ h+='<div class="opts">';
+ q.o.forEach(function(o,n){h+='<button class="opt" data-n="'+n+'">'+o+'</button>'});
+ h+='</div><div class="msg" id="msg" aria-live="polite"></div><button class="go" id="nx" style="display:none">Next ➜</button></div>';
+ app.innerHTML=h;
+ var btns=app.querySelectorAll(".opt");
+ btns.forEach(function(b){b.onclick=function(){
+  if(done)return;
+  var w=q.o[+b.dataset.n];
+  if(multi){
+   var x=sel.indexOf(w);if(x>-1){sel.splice(x,1);b.classList.remove("sel")}else{sel.push(w);b.classList.add("sel")}
+   if(sel.length===q.a.length)check(q,btns,multi);
+  }else{sel=[w];b.classList.add("sel");check(q,btns,multi)}
+ }});
+ document.getElementById("nx").onclick=function(){i++;ask()};
+}
+
+function check(q,btns,multi){
+ var msg=document.getElementById("msg");
+ var ok=q.a==="any"||(sel.length===q.a.length&&q.a.every(function(a){return sel.indexOf(a)>-1}));
+ if(ok){
+  done=true;if(tries===0)score++;
+  btns.forEach(function(b){var w=q.o[+b.dataset.n];b.classList.remove("sel");if(q.a==="any"?sel.indexOf(w)>-1:q.a.indexOf(w)>-1)b.classList.add("ok")});
+  var extra="";
+  if(q.a==="any")extra=" “"+sel[0]+"” is an adjective, so it makes a noun phrase!";
+  msg.className="msg g";msg.textContent=pick(GOOD)+extra;
+  var nx=document.getElementById("nx");nx.style.display="block";nx.textContent=(i===Q.length-1)?"Draw my firefly ➜":"Next ➜";
+  var jb=app.querySelectorAll(".jar b");if(jb[Math.min(score,Q.length)-1]&&tries===0)jb[score-1].classList.add("on");
+ }else{
+  tries++;msg.className="msg b";msg.textContent=pick(BAD);
+  btns.forEach(function(b){var w=q.o[+b.dataset.n];if(sel.indexOf(w)>-1){b.classList.remove("sel");if(!multi)b.classList.add("no");b.classList.add("shake");setTimeout(function(){b.classList.remove("shake")},400)}});
+  if(multi)btns.forEach(function(b){b.classList.remove("sel")});
+  sel=[];
+ }
+}
+
+function draw(){
+ app.innerHTML='<h1>🎨 Your Firefly!</h1><div class="card"><h2 class="center">Draw a firefly at night</h2><canvas id="cv" width="480" height="360"></canvas><div class="tools" id="tl"></div><div class="center"><button class="small" id="clr">🧽 Start again</button></div><h2 class="center" style="margin-top:16px">Write your noun phrase</h2><p class="mute center" style="margin:0">Example: my bright dancing star bug</p><input type="text" id="ph" maxlength="50" placeholder="My noun phrase…" autocomplete="off"><button class="go" id="fin">I’m finished! 🌟</button></div>';
+ var cv=document.getElementById("cv"),c=cv.getContext("2d"),col=COL[0],on=false;
+ function bg(){c.fillStyle="#0b1230";c.fillRect(0,0,480,360)}bg();
+ c.lineCap="round";c.lineJoin="round";c.lineWidth=9;
+ var tl=document.getElementById("tl");
+ COL.forEach(function(x,n){var b=document.createElement("button");b.className="sw"+(n?"":" on");b.style.background=x;b.setAttribute("aria-label","Colour "+(n+1));b.onclick=function(){col=x;tl.querySelectorAll(".sw").forEach(function(s){s.classList.remove("on")});b.classList.add("on")};tl.appendChild(b)});
+ function pos(e){var r=cv.getBoundingClientRect();return[(e.clientX-r.left)*480/r.width,(e.clientY-r.top)*360/r.height]}
+ cv.onpointerdown=function(e){on=true;cv.setPointerCapture(e.pointerId);var p=pos(e);c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=8;c.beginPath();c.moveTo(p[0],p[1]);c.lineTo(p[0]+.1,p[1]+.1);c.stroke()};
+ cv.onpointermove=function(e){if(!on)return;var p=pos(e);c.lineTo(p[0],p[1]);c.stroke()};
+ cv.onpointerup=cv.onpointercancel=function(){on=false};
+ document.getElementById("clr").onclick=function(){c.shadowBlur=0;bg()};
+ document.getElementById("fin").onclick=function(){phrase=document.getElementById("ph").value.trim();try{pic=cv.toDataURL("image/png")}catch(e){pic=""}end()};
+}
+
+function end(){
+ var stars=score>=10?"🌟🌟🌟":score>=6?"🌟🌟":"🌟";
+ app.innerHTML='<h1>🎉 Well done! 🎉</h1><div class="card cert"><p class="big">'+stars+'</p><h2 id="who"></h2><p>You caught <b>'+score+' out of '+Q.length+'</b> fireflies on the first try!</p><p class="mute" style="margin:0">My noun phrase:</p><p class="sentence" id="np"></p>'+(pic?'<img alt="My firefly drawing" src="'+pic+'">':'')+'<p class="mute">Ask a grown-up to take a picture of your certificate!</p></div><button class="go" id="again">Play again 🔁</button>';
+ document.getElementById("who").textContent=name?("Super job, "+name+"!"):"Super job!";
+ document.getElementById("np").textContent=phrase||"(Your firefly is shining!)";
+ document.getElementById("again").onclick=function(){pic="";phrase="";start()};
+}
+start();
+})();
+</script>
+</body>
+</html>
